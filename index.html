@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SMASH CAMPUS — 캠퍼스 브레이커</title>
+<style>
+:root{--cyan:#67f7ff;--pink:#ff4c91;--ink:#07101e}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#081322;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+canvas{display:block}#hud{position:fixed;inset:0;pointer-events:none}
+.top{position:absolute;left:22px;top:18px;display:flex;gap:10px;align-items:center}
+.logo{font-size:clamp(17px,3vw,25px);font-weight:1000;letter-spacing:2px;text-shadow:0 0 18px #35dfffa8}
+.tag{font-size:10px;letter-spacing:2px;color:var(--cyan);border:1px solid #67f7ff66;padding:5px 8px;border-radius:20px}
+.stats{position:absolute;right:20px;top:18px;display:flex;gap:9px}
+.stat{min-width:88px;background:#07101ecc;border:1px solid #ffffff22;border-radius:12px;padding:9px 13px;backdrop-filter:blur(10px)}
+.stat small{display:block;color:#93a8c2;font-size:10px;letter-spacing:1px}.stat strong{font-size:20px;font-variant-numeric:tabular-nums}
+#message{position:absolute;left:50%;top:18%;transform:translateX(-50%);font-weight:900;font-size:clamp(18px,3vw,28px);text-shadow:0 3px 18px #000;opacity:0;transition:opacity .2s}
+#crosshair{position:absolute;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);opacity:.85}
+#crosshair:before,#crosshair:after{content:"";position:absolute;background:#dffcff;box-shadow:0 0 8px var(--cyan)}
+#crosshair:before{width:2px;height:18px;left:8px}#crosshair:after{height:2px;width:18px;top:8px}
+#bottom{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);text-align:center;width:min(94vw,700px)}
+#hint{font-size:12px;color:#c4d4e8;background:#07101ebd;border:1px solid #ffffff20;border-radius:10px;padding:9px 14px;display:inline-block}
+#healthWrap{width:210px;height:8px;margin:0 auto 9px;background:#ffffff28;border-radius:9px;overflow:hidden}
+#health{height:100%;width:100%;background:linear-gradient(90deg,#45e6d0,#a3ff75);transition:width .2s}
+#overlay{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(135deg,#07101eeF,#101b35dd);z-index:5}
+.panel{width:min(92vw,520px);padding:34px 30px;border:1px solid #6df4ff55;border-radius:22px;background:linear-gradient(145deg,#111e36f2,#081322f5);box-shadow:0 25px 100px #0009;text-align:center}
+.kicker{color:var(--cyan);letter-spacing:4px;font-size:11px;font-weight:800}
+h1{font-size:clamp(34px,8vw,58px);line-height:.95;margin:14px 0 10px;font-weight:1000;letter-spacing:-2px}
+h1 span{color:var(--pink);text-shadow:0 0 24px #ff4c9170}
+.desc{color:#b8c7dc;line-height:1.7;font-size:14px;margin:16px 0 23px}
+button{pointer-events:auto;border:0;cursor:pointer;font-weight:900;letter-spacing:1px;border-radius:12px;padding:14px 25px;color:#06111e;background:linear-gradient(100deg,var(--cyan),#8dffc8);box-shadow:0 8px 30px #67f7ff38;font-size:15px}
+button:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:18px}
+kbd{font:700 11px ui-monospace,monospace;color:#e7f5ff;border:1px solid #ffffff35;background:#ffffff12;padding:4px 7px;border-radius:5px}
+#toast{position:absolute;bottom:85px;left:50%;transform:translateX(-50%);background:#07101ee8;border:1px solid #67f7ff66;border-radius:9px;padding:8px 13px;font-size:12px;opacity:0;transition:opacity .2s}
+@media(max-width:600px){.top{left:12px;top:12px}.stats{right:10px;top:58px}.stat{min-width:72px;padding:7px 9px}.stat strong{font-size:16px}#bottom{bottom:12px}#hint{font-size:10px}}
+</style>
+</head>
+<body>
+<div id="hud">
+ <div class="top"><div class="logo">SMASH <span style="color:#ff4c91">CAMPUS</span></div><div class="tag">3D DESTRUCTION</div></div>
+ <div class="stats">
+  <div class="stat"><small>SCORE</small><strong id="score">000000</strong></div>
+  <div class="stat"><small>BUILDINGS</small><strong id="count">0 / 0</strong></div>
+  <div class="stat"><small>TIME</small><strong id="time">90</strong></div>
+ </div>
+ <div id="message"></div><div id="crosshair"></div>
+ <div id="bottom"><div id="healthWrap"><div id="health"></div></div><div id="hint">WASD 이동 · 마우스 드래그 시점 회전 · 클릭 또는 E 공격 · Q 충격파</div></div>
+ <div id="toast"></div>
+</div>
+<div id="overlay"><div class="panel">
+ <div class="kicker">A PROCEDURAL 3D CAMPUS GAME</div>
+ <h1>SMASH<br><span>CAMPUS</span></h1>
+ <div class="desc">가상의 캠퍼스를 누비며 건물을 부숴 보자!<br>콤보를 이어가고 충격파로 한 번에 큰 점수를 획득해.</div>
+ <button id="start">게임 시작</button>
+ <div class="controls"><kbd>W A S D</kbd><kbd>마우스 드래그</kbd><kbd>클릭 / E</kbd><kbd>Q 충격파</kbd></div>
+ <div style="font-size:10px;color:#6f849f;margin-top:20px">※ 실제 학교와 무관한 가상 캠퍼스 게임</div>
+</div></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const $=id=>document.getElementById(id);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x091629);
+scene.fog=new THREE.FogExp2(0x091629,0.012);
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,250);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.8));renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
+document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0x9ccaff,0x253047,2.0));
+const sun=new THREE.DirectionalLight(0xffe6c2,3.1);sun.position.set(-25,45,20);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-65;sun.shadow.camera.right=65;sun.shadow.camera.top=65;sun.shadow.camera.bottom=-65;scene.add(sun);
+const fill=new THREE.PointLight(0x2e8cff,22,85);fill.position.set(12,15,-18);scene.add(fill);
+
+const groundMat=new THREE.MeshStandardMaterial({color:0x263d4a,roughness:.94});
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(220,220),groundMat);ground.rotation.x=-Math.PI/2;ground.position.y=-.15;ground.receiveShadow=true;scene.add(ground);
+const grid=new THREE.GridHelper(220,55,0x4b8190,0x315260);grid.position.y=-.12;grid.material.opacity=.24;grid.material.transparent=true;scene.add(grid);
+const roadMat=new THREE.MeshStandardMaterial({color:0x182b3a,roughness:1});
+function road(x,z,w,d){const m=new THREE.Mesh(new THREE.BoxGeometry(w,.06,d),roadMat);m.position.set(x,-.08,z);m.receiveShadow=true;scene.add(m)}
+road(0,0,13,190);road(0,0,190,13);
+const lineMat=new THREE.MeshBasicMaterial({color:0x8acbd0});
+for(let i=-85;i<=85;i+=8){const l=new THREE.Mesh(new THREE.BoxGeometry(.12,.02,2.8),lineMat);l.position.set(0,-.035,i);scene.add(l);const l2=l.clone();l2.position.set(i,-.035,0);l2.rotation.y=Math.PI/2;scene.add(l2)}
+// Decorative low-poly trees
+const treeMat=new THREE.MeshStandardMaterial({color:0x246b59,roughness:1}),trunkMat=new THREE.MeshStandardMaterial({color:0x73533b});
+for(let i=0;i<95;i++){const x=(Math.random()-.5)*175,z=(Math.random()-.5)*175;if(Math.abs(x)<11||Math.abs(z)<11)continue;
+ const h=1.2+Math.random()*1.8;const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.13,.2,h,6),trunkMat);trunk.position.set(x,h/2-.1,z);trunk.castShadow=true;scene.add(trunk);
+ const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(.75+Math.random()*.55,1),treeMat);crown.position.set(x,h+.5,z);crown.castShadow=true;scene.add(crown);
+}
+const buildingMaterials=[0x5e7891,0x7b8797,0x8a705f,0x526d79,0x77718f,0x9a9b91].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.75,metalness:.08}));
+const windowMat=new THREE.MeshStandardMaterial({color:0x70c9d9,emissive:0x16445b,emissiveIntensity:.35,metalness:.5,roughness:.25});
+const buildings=[];
+function makeBuilding(x,z,w,d,h,index){
+ const group=new THREE.Group();group.position.set(x,0,z);scene.add(group);
+ const mat=buildingMaterials[index%buildingMaterials.length];
+ const body=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);body.position.y=h/2;body.castShadow=true;body.receiveShadow=true;group.add(body);
+ const roof=new THREE.Mesh(new THREE.BoxGeometry(w+.25,.28,d+.25),new THREE.MeshStandardMaterial({color:0x263849,metalness:.3,roughness:.65}));roof.position.y=h+.12;roof.castShadow=true;group.add(roof);
+ // rows of simple window bands on the front and side
+ const rows=Math.max(2,Math.floor(h/1.65)),cols=Math.max(2,Math.floor(w/1.7));
+ for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+  const win=new THREE.Mesh(new THREE.BoxGeometry(.72,.55,.035),windowMat);win.position.set(-w/2+(c+.5)*w/cols,1+r*(h-1.1)/rows,d/2+.022);group.add(win);
+  const side=new THREE.Mesh(new THREE.BoxGeometry(.035,.55,.72),windowMat);side.position.set(w/2+.022,1+r*(h-1.1)/rows,-d/2+(c+.5)*d/cols);group.add(side);
+ }
+ // entrance canopy
+ const door=new THREE.Mesh(new THREE.BoxGeometry(1.5,1.9,.12),new THREE.MeshStandardMaterial({color:0x162c3d}));door.position.set(0,.95,d/2+.07);group.add(door);
+ const label=new THREE.Mesh(new THREE.BoxGeometry(Math.min(w*.7,5),.32,.08),new THREE.MeshStandardMaterial({color:0x1a3548,emissive:0x15364b}));label.position.set(0,h*.78,d/2+.04);group.add(label);
+ const building={group,body,w,d,h,hp:100,maxHp:100,alive:true,index};buildings.push(building);
+}
+const positions=[
+ [-25,-25,12,10,15],[-8,-29,10,12,11],[24,-26,14,12,20],[43,-8,12,10,13],
+ [-30,0,13,12,19],[-22,28,12,10,12],[-5,28,15,11,23],[23,26,12,12,16],[42,28,11,10,10],
+ [-45,43,10,12,14],[5,-52,13,10,17],[31,-52,11,12,12],[-44,-49,12,10,18],
+ [54,5,10,12,16],[-55,-5,11,10,11],[0,51,14,11,14]
+];
+positions.forEach((p,i)=>makeBuilding(...p,i));
+const plaza=new THREE.Mesh(new THREE.CylinderGeometry(7,7,.18,48),new THREE.MeshStandardMaterial({color:0x344e5d,roughness:.8}));plaza.position.set(0,-.02,0);plaza.receiveShadow=true;scene.add(plaza);
+const fountain=new THREE.Mesh(new THREE.CylinderGeometry(2.1,2.5,.65,24),new THREE.MeshStandardMaterial({color:0x536e7b,metalness:.4,roughness:.35}));fountain.position.set(0,.35,0);scene.add(fountain);
+const water=new THREE.Mesh(new THREE.CylinderGeometry(1.75,1.75,.12,32),new THREE.MeshStandardMaterial({color:0x38c8e5,emissive:0x12607b,metalness:.65,roughness:.2}));water.position.set(0,.72,0);scene.add(water);
+// Player robot
+const player=new THREE.Group();scene.add(player);
+const dark=new THREE.MeshStandardMaterial({color:0x172d43,metalness:.65,roughness:.35});
+const armor=new THREE.MeshStandardMaterial({color:0x32d8e7,metalness:.55,roughness:.28,emissive:0x063e4b});
+const head=new THREE.Mesh(new THREE.BoxGeometry(.8,.72,.72),dark);head.position.y=2.05;player.add(head);
+const visor=new THREE.Mesh(new THREE.BoxGeometry(.62,.22,.08),new THREE.MeshBasicMaterial({color:0xff4c91}));visor.position.set(0,2.08,.39);player.add(visor);
+const torso=new THREE.Mesh(new THREE.BoxGeometry(1.05,1.05,.62),armor);torso.position.y=1.25;player.add(torso);
+for(const x of [-.68,.68]){const arm=new THREE.Mesh(new THREE.BoxGeometry(.32,.95,.38),dark);arm.position.set(x,1.28,0);player.add(arm)}
+for(const x of [-.3,.3]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.36,.75,.42),dark);leg.position.set(x,.4,0);player.add(leg)}
+const ring=new THREE.Mesh(new THREE.TorusGeometry(.85,.045,8,32),new THREE.MeshBasicMaterial({color:0x57f5ff}));ring.rotation.x=Math.PI/2;ring.position.y=.08;player.add(ring);
+player.position.set(0,0,8);
+let yaw=0,pitch=.18,cameraDistance=10,drag=false,lastX=0,lastY=0;
+const keys={};let score=0,timeLeft=90,health=100,combo=0,lastHit=0,gameRunning=false,shockCooldown=0,attackCooldown=0;
+let debris=[],particles=[],destroyed=0;
+const clock=new THREE.Clock();
+function updateHud(){$('score').textContent=String(score).padStart(6,'0');$('count').textContent=destroyed+' / '+buildings.length;$('time').textContent=Math.ceil(timeLeft);$('health').style.width=health+'%'}
+function toast(t){$('toast').textContent=t;$('toast').style.opacity=1;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').style.opacity=0,1300)}
+function announce(t){$('message').textContent=t;$('message').style.opacity=1;clearTimeout(announce.timer);announce.timer=setTimeout(()=>$('message').style.opacity=0,950)}
+function spawnBurst(pos,color=0x67f7ff,n=16){for(let i=0;i<n;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(.12+Math.random()*.22,.12+Math.random()*.22,.12+Math.random()*.22),new THREE.MeshStandardMaterial({color,metalness:.35,roughness:.55}));m.position.copy(pos);m.castShadow=true;scene.add(m);debris.push({mesh:m,vel:new THREE.Vector3((Math.random()-.5)*8,2+Math.random()*8,(Math.random()-.5)*8),life:1.8+Math.random()*1.3,spin:new THREE.Vector3(Math.random()*7,Math.random()*7,Math.random()*7)})}}
+function burstRing(pos){const mesh=new THREE.Mesh(new THREE.TorusGeometry(.5,.12,8,48),new THREE.MeshBasicMaterial({color:0x65f7ff,transparent:true,opacity:.9}));mesh.rotation.x=Math.PI/2;mesh.position.copy(pos);mesh.position.y=.2;scene.add(mesh);particles.push({mesh,life:.55,max:.55,ring:true})}
+function damageBuilding(b,amount){
+ if(!b.alive)return;
+ b.hp=Math.max(0,b.hp-amount);const p=b.group.position.clone();p.y+=b.h*.55;
+ spawnBurst(p,0x6ceeff,5);
+ if(b.hp<=0){b.alive=false;destroyed++;score+=100+combo*15;combo=Math.min(combo+1,20);lastHit=performance.now();spawnBurst(new THREE.Vector3(p.x,b.h*.65,p.z),0xff5b9c,34);scene.remove(b.group);announce('BUILDING DESTROYED  +'+(100+combo*15));}
+ else {score+=10;const ratio=b.hp/b.maxHp;b.group.scale.y=.92+.08*ratio;b.body.material=ratio<.5?new THREE.MeshStandardMaterial({color:0x8c5a55,roughness:.9}):b.body.material;toast('HIT!  '+Math.ceil(b.hp)+'%');}
+ updateHud();
+}
+function nearestBuilding(maxDist=10){let best=null,dist=maxDist;for(const b of buildings){if(!b.alive)continue;const dx=b.group.position.x-player.position.x,dz=b.group.position.z-player.position.z;const d=Math.hypot(dx,dz);if(d<dist){const angle=Math.atan2(dx,dz),diff=Math.atan2(Math.sin(angle-yaw),Math.cos(angle-yaw));if(Math.abs(diff)<1.25){best=b;dist=d}}}return best}
+function attack(){if(!gameRunning||attackCooldown>0)return;attackCooldown=.38;const b=nearestBuilding(12);if(!b){toast('가까운 건물이 없어!');return}damageBuilding(b,38+Math.min(combo,8)*2)}
+function shockwave(){if(!gameRunning||shockCooldown>0)return;shockCooldown=7;burstRing(player.position.clone());let hits=0;for(const b of buildings){if(!b.alive)continue;const d=Math.hypot(b.group.position.x-player.position.x,b.group.position.z-player.position.z);if(d<23){damageBuilding(b,42);hits++}}score+=hits*25;toast('충격파! '+hits+'개 건물 타격');updateHud()}
+function resetGame(){for(const d of debris)scene.remove(d.mesh);for(const p of particles)scene.remove(p.mesh);debris=[];particles=[];buildings.forEach(b=>{b.alive=true;b.hp=100;b.group.scale.set(1,1,1);b.body.material=buildingMaterials[b.index%buildingMaterials.length];scene.add(b.group)});player.position.set(0,0,8);yaw=0;score=0;timeLeft=90;health=100;combo=0;destroyed=0;shockCooldown=0;attackCooldown=0;updateHud()}
+function startGame(){resetGame();gameRunning=true;$('overlay').style.display='none';toast('캠퍼스에 진입했다!')}
+$('start').addEventListener('click',startGame);
+addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyE')attack();if(e.code==='KeyQ')shockwave();if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault()});
+addEventListener('keyup',e=>keys[e.code]=false);
+renderer.domElement.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;lastY=e.clientY;if(gameRunning&&e.button===0)attack()});
+addEventListener('pointerup',()=>drag=false);
+addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;yaw-=dx*.006;pitch=THREE.MathUtils.clamp(pitch+dy*.003,-.1,.65)});
+renderer.domElement.addEventListener('contextmenu',e=>e.preventDefault());
+addEventListener('wheel',e=>{cameraDistance=THREE.MathUtils.clamp(cameraDistance+e.deltaY*.008,6,16)},{passive:true});
+function updatePlayer(dt){
+ const forward=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw));const right=new THREE.Vector3(forward.z,0,-forward.x);
+ let move=new THREE.Vector3();if(keys.KeyW||keys.ArrowUp)move.add(forward);if(keys.KeyS||keys.ArrowDown)move.sub(forward);if(keys.KeyD||keys.ArrowRight)move.add(right);if(keys.KeyA||keys.ArrowLeft)move.sub(right);
+ if(move.lengthSq()>0){move.normalize();player.position.addScaledVector(move,dt*12);player.rotation.y=yaw;ring.rotation.z+=dt*2}
+ player.position.x=THREE.MathUtils.clamp(player.position.x,-88,88);player.position.z=THREE.MathUtils.clamp(player.position.z,-88,88);
+}
+function updateCamera(dt){const target=new THREE.Vector3(player.position.x,player.position.y+1.4,player.position.z);const offset=new THREE.Vector3(-Math.sin(yaw)*cameraDistance,4+pitch*8,-Math.cos(yaw)*cameraDistance);camera.position.lerp(target.clone().add(offset),1-Math.pow(.001,dt));camera.lookAt(target)}
+function animateDebris(dt){for(let i=debris.length-1;i>=0;i--){const d=debris[i];d.life-=dt;d.vel.y-=18*dt;d.mesh.position.addScaledVector(d.vel,dt);d.mesh.rotation.x+=d.spin.x*dt;d.mesh.rotation.y+=d.spin.y*dt;if(d.mesh.position.y<.12){d.mesh.position.y=.12;d.vel.y*=-.32;d.vel.x*=.72;d.vel.z*=.72}if(d.life<=0){scene.remove(d.mesh);debris.splice(i,1)}}for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt;const t=1-p.life/p.max;p.mesh.scale.setScalar(1+t*20);p.mesh.material.opacity=Math.max(0,p.life/p.max);if(p.life<=0){scene.remove(p.mesh);particles.splice(i,1)}}}
+function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.04);if(gameRunning){updatePlayer(dt);updateCamera(dt);timeLeft-=dt;attackCooldown=Math.max(0,attackCooldown-dt);shockCooldown=Math.max(0,shockCooldown-dt);if(performance.now()-lastHit>4500)combo=0;if(timeLeft<=0){timeLeft=0;gameRunning=false;$('overlay').style.display='grid';$('overlay').querySelector('h1').innerHTML='TIME<br><span>OVER</span>';$('overlay').querySelector('.desc').innerHTML='최종 점수: <b>'+score.toLocaleString()+'</b><br>파괴한 건물: '+destroyed+'개';$('start').textContent='다시 도전';}updateHud()}else updateCamera(dt);animateDebris(dt);renderer.render(scene,camera)}
+updateHud();updateCamera(.1);loop();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body>
+</html>
