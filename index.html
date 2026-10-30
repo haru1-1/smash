@@ -47,7 +47,7 @@ const schools=[
  {name:'서울대학교 관악캠퍼스',region:'수도권',lat:37.4599,lon:126.9519}
 ];
 const $=id=>document.getElementById(id);let region='전체';
-function renderSchools(){const q=$('schoolSearch').value.trim().toLowerCase();const list=schools.filter(s=>(region==='전체'||s.region===region)&&(!q||(s.name+' '+s.region).toLowerCase().includes(q)));$('resultCount').textContent=list.length+'개 캠퍼스';$('schoolGrid').innerHTML='';list.forEach(s=>{const b=document.createElement('button');b.className='school';b.innerHTML='<span class="region">'+s.region+' REGION</span><strong>'+s.name+'</strong><small>3D 캠퍼스 입장하기</small><span class="arrow">↗</span>';b.addEventListener('click',()=>enterSchool(s));$('schoolGrid').appendChild(b)})}
+function renderSchools(){$('resultCount').textContent=schools.length+'개 캠퍼스';$('schoolGrid').innerHTML='';schools.forEach(s=>{const b=document.createElement('button');b.className='school';b.innerHTML='<span class="region">ONE CAMPUS</span><strong>'+s.name+'</strong><small>3D 캠퍼스 입장하기</small><span class="arrow">↗</span>';b.addEventListener('click',()=>enterSchool(s));$('schoolGrid').appendChild(b)})}
 renderSchools();
 let scene,camera,renderer,player,clock,buildings=[],keys={},running=false,score=0,smashed=0,timeLeft=90,combo=0,lastHit=0,yaw=0,pitch=.32,drag=false,lastX=0,lastY=0,toastTimer,shockReady=true,frameId,activeSchool;
 const mat=(c,r=.8)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
